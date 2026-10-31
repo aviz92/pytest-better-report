@@ -44,6 +44,9 @@ from pytest_better_report.utils.pytest_helper import (
 
 logger = get_logger(f"{LOGGER_NAME}.better_report")
 
+# pytest's own structural markers: they say how a test is built, not what it is, so they aren't recorded.
+_STRUCTURAL_MARKERS = frozenset({"parametrize", "usefixtures", "filterwarnings"})
+
 _PASSING_STATUSES = (
     ExecutionStatus.COLLECTED,
     ExecutionStatus.PASSED,
@@ -79,12 +82,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         default=None,
         help="Commit Hash (SHA-1) of the repository at the time of test execution",
-    )
-    parser.addoption(
-        "--add-parameters",
-        action="store_true",
-        default=None,
-        help='Add the test parameters as fields to the "test_results.json" file',
     )
     parser.addoption(
         "--pytest-command",
@@ -196,12 +193,11 @@ class BetterReporter:
             }
 
     def pytest_collection_finish(self, session: pytest.Session) -> None:
-        add_parameters = session.config.getoption("--add-parameters")
         for item in session.items:
             test_full_name = get_test_full_name(item=item)
             has_callspec_params = bool(getattr(item, "callspec", None) and getattr(item.callspec, "params", None))
             self._full_names[item.nodeid] = test_full_name
-            self.test_results[test_full_name] = TestData(
+            test_data = TestData(
                 class_test_name=item.cls.__name__ if item.cls else None,
                 test_name=get_test_name_without_parameters(item=item),
                 pytest_test_name=get_pytest_test_name(item=item),
@@ -209,13 +205,12 @@ class BetterReporter:
                 test_full_path=get_test_full_path(item=item),
                 test_file_name=item.path.name,
                 test_parameters=item.callspec.params if has_callspec_params else None,
-                test_markers=[marker.name for marker in item.iter_markers() if not marker.args],
+                test_markers=_marker_names(item=item),
                 test_status=ExecutionStatus.COLLECTED,
                 test_start_time=None,
                 run_index=len(self.test_results) + 1,
             )
-            if has_callspec_params and add_parameters:
-                self.test_results[test_full_name].__dict__.update(**item.callspec.params)
+            self.test_results[test_full_name] = test_data
         logger.debug(
             f"Tests to be executed: \n{json.dumps(list(self.test_results.keys()), indent=4, default=default_serialize)}"
         )
@@ -302,6 +297,11 @@ class BetterReporter:
         all_passed = all(t.test_status in passing_statuses for t in self.test_results.values())
         exec_info.execution_status = ExecutionStatus.PASSED if all_passed else ExecutionStatus.FAILED
         exec_info.test_list = list(self.test_results.keys())
+
+
+def _marker_names(item: pytest.Item) -> list[str]:
+    names = (marker.name for marker in item.iter_markers() if marker.name not in _STRUCTURAL_MARKERS)
+    return list(dict.fromkeys(names))  # unique, in pytest's order (closest marker first)
 
 
 def _exception_message(call: pytest.CallInfo[None], with_traceback: bool) -> dict[str, Any]:

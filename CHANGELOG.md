@@ -19,6 +19,8 @@ replacement.
 - Tests for the `better_report_compare` CLI.
 
 ### Changed
+- `test_markers` records every marker except pytest's structural ones (`parametrize`, `usefixtures`,
+  `filterwarnings`); markers with positional arguments were dropped.
 - A test's status is decided from pytest's final reports, after every plugin has finished changing them, so a
   plugin that converts outcomes (e.g. failures into skips) is reflected regardless of plugin load order.
 - An error in teardown marks the test as `failed` (it was ignored, so the test was reported as passed). The first
@@ -30,7 +32,13 @@ replacement.
 - The `failed-skipped` status is removed: nothing produces it since `fail2skip` moved to its own package.
 - The logger is named `pytest_better_report` (was `pytest_plugins.better_report`).
 
+### Removed
+- `--add-parameters`. It copied every test parameter to the top level of the test's entry, where a parameter
+  named like a report field (e.g. `test_name`) silently overwrote that field. Parameters are always recorded in
+  `test_parameters`, which ELK and similar tools index as `test_parameters.<name>`.
+
 ### Fixed
+- `execution_duration_sec` was typed as a string.
 - Results lived in module-level dicts, so a second run in the same process inherited the first run's tests and status.
 - `--result-each-test` never logged anything (it checked an attribute nothing set).
 - The Markdown report crashed with `KeyError` when a test raised with a JSON object as its message.

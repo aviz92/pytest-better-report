@@ -53,7 +53,6 @@ Files are written to `results_output/` (or `<output-dir>/results_output/`):
 | `--md-report` | Also write `test_report.md` |
 | `--traceback` | Add the crash location and traceback frames to each exception |
 | `--repo-name`, `--pr-number`, `--mr-number`, `--pipeline-number`, `--commit` | CI metadata for `execution_results.json` |
-| `--add-parameters` | Add each test parameter as its own field in `test_results.json` |
 | `--pytest-command` | Record the pytest command line in `execution_results.json` |
 | `--pytest-xfail-strict` | Treat an unexpected pass (XPASS) as a failure of the run |
 | `--result-each-test` | Log each test's result after it runs |
@@ -108,6 +107,8 @@ Differences you may notice:
 - A test that errors in teardown is now `failed` (it was reported as passed).
 - The `failed-skipped` status no longer exists; converted failures are `skipped`, with the reason in `test_user_properties`.
 - The logger is named `pytest_better_report`.
+- `--add-parameters` was removed. Parameters are always recorded in `test_parameters`; in ELK / Kibana query them
+  as `test_parameters.<name>` instead of `<name>`. Passing the flag now fails with "unrecognized arguments".
 
 ---
 

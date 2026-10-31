@@ -352,3 +352,59 @@ class TestIsolation:
         assert list(second_results) == ["test_passes"], list(second_results)
         execution = _read_json(pytester.path / "second" / "results_output" / EXECUTION_RESULTS_FILENAME)
         assert execution["execution_info"]["execution_status"] == "passed"
+
+
+class TestRecordedFields:
+    def test_parameters_are_recorded_only_in_test_parameters(self, pytester: pytest.Pytester) -> None:
+        # Parameters live in their own field, so a parameter can never collide with a report field.
+        pytester.makepyfile(
+            test_params="""
+            import pytest
+
+            @pytest.mark.parametrize("test_name, speed", [("not-a-report-field", 10)])
+            def test_drive(test_name, speed):
+                assert True
+        """
+        )
+        result = pytester.runpytest_subprocess("--better-report")
+        assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
+        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)[
+            "test_drive[{'test_name': 'not-a-report-field', 'speed': 10}]"
+        ]
+        assert test_entry["test_parameters"] == {"test_name": "not-a-report-field", "speed": 10}, test_entry
+        assert test_entry["test_name"] == "test_drive", test_entry["test_name"]
+        assert "speed" not in test_entry, "Parameters must not be copied to the top level"
+
+    def test_add_parameters_flag_was_removed(self, pytester: pytest.Pytester) -> None:
+        pytester.makepyfile("def test_ok():\n    assert True\n")
+        result = pytester.runpytest_subprocess("--better-report", "--add-parameters")
+        assert result.ret == pytest.ExitCode.USAGE_ERROR, f"Expected USAGE_ERROR, got {result.ret}"
+        result.stderr.fnmatch_lines(["*unrecognized arguments: --add-parameters*"])
+
+    def test_markers_with_arguments_are_recorded(self, pytester: pytest.Pytester) -> None:
+        # Regression: markers with positional arguments (e.g. device_type("camera")) were dropped.
+        pytester.makeini(
+            """
+            [pytest]
+            markers =
+                slow: slow test
+                device_type: device type
+                jira: jira ticket
+        """
+        )
+        pytester.makepyfile(
+            test_marks="""
+            import pytest
+
+            @pytest.mark.parametrize("n", [1])
+            @pytest.mark.slow
+            @pytest.mark.device_type("camera")
+            @pytest.mark.jira(ticket="ME-1")
+            @pytest.mark.usefixtures("tmp_path")
+            def test_marked(n):
+                pass
+        """
+        )
+        pytester.runpytest_subprocess("--better-report")
+        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_marked[{'n': 1}]"]
+        assert sorted(test_entry["test_markers"]) == ["device_type", "jira", "slow"], test_entry["test_markers"]
