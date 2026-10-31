@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-better-report"
-version = "1.0.0"
+version = "1.0.1"
 description = "A pytest plugin that writes structured JSON (and optional Markdown) reports of every run, with CI metadata and a CLI to compare two runs."
 readme = "README.md"
 requires-python = ">=3.12"
