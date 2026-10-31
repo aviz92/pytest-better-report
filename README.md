@@ -1,120 +1,113 @@
-![PyPI version](https://img.shields.io/pypi/v/<project-name>)
+![PyPI version](https://img.shields.io/pypi/v/pytest-better-report)
 ![Python](https://img.shields.io/badge/python->=3.12-blue)
 ![Development Status](https://img.shields.io/badge/status-stable-green)
 ![Maintenance](https://img.shields.io/maintenance/yes/2026)
-![PyPI](https://img.shields.io/pypi/dm/<project-name>)
-![License](https://img.shields.io/pypi/l/<project-name>)
+![PyPI](https://img.shields.io/pypi/dm/pytest-better-report)
+![License](https://img.shields.io/pypi/l/pytest-better-report)
 
 ---
 
-# 🧱 Dev Template Repository
-A comprehensive, production-ready template repository for initializing new development projects with consistent tooling, editor settings, GitHub workflows, and best practices. This template serves as a **baseline setup** for modern development workflows, reducing setup overhead and promoting standardization across all your codebases.
-
-## 🎯 Overview
-This template provides a solid foundation for Python projects with:
-- **Pre-configured development environment** with VS Code settings and extensions
-- **Automated CI/CD pipelines** using GitHub Actions
-- **Code quality enforcement** with linting, formatting, and testing
-- **Professional project structure** with proper documentation and metadata
-- **Team collaboration tools** including PR templates and code ownership
+# 💡 pytest-better-report
+A pytest plugin that writes a structured report of every run: a JSON file per test, a JSON file for the run with CI
+metadata (repo, PR/MR, pipeline, commit), and an optional Markdown summary. Includes a CLI to compare two runs.
 
 ---
 
-## 📁 What's Included
-
-### 🔧 Development Environment (`.vscode/`)
-- **`settings.json`**: Editor defaults (format on save, lint integration, tab size, Python interpreter)
-- **`extensions.json`**: Recommended extensions for Python development and team consistency
-- **`keybindings.json`**: Custom keyboard shortcuts for improved productivity
-- **`launch.json`**: Debugging configurations for Python applications
-
-### ⚙️ GitHub Configuration (`.github/`)
-- **Workflows**: Automated CI/CD pipelines for testing, linting, and publishing
-  - `publish_to_pypi.yml`: Automated PyPI package publishing
-- **`CODEOWNERS`**: Define default code reviewers per folder/path
-- **Issue templates**: Standardized bug reports and feature requests
-- **Pull request template**: Enforce contribution guidelines and checklists
-
-### 🧹 Code Quality & Style
-- **Python-specific configurations**:
-  - `pyproject.toml`: Core dependencies and development tools
-  - `MANIFEST.in`: Package distribution configuration
-  - `env.template`: Environment variables template
-- **`.gitignore`**: Preconfigured for Python, IDEs, and common tools
-- **`.cursor/`**: Cursor IDE specific configurations and instructions
-
-### 📄 Project Metadata
-- **`README.md`**: Comprehensive project documentation
-- **`LICENSE`**: MIT license for open-source projects
-- **`CHANGELOG.md`**: Version tracking and release notes
+## 📦 Installation
+```bash
+uv add pytest-better-report
+```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Features
+  - ✅ **Structured JSON** — `test_results.json` (one entry per test) and `execution_results.json` (the run)
+  - ✅ **CI traceability** — repo name, PR / MR number, pipeline number and commit in the run report
+  - ✅ **Markdown summary** — a table of every test with status, duration and message
+  - ✅ **Structured failure data** — raise with a JSON object as the message to record it as data
+  - ✅ **Compare two runs** — `better_report_compare` lists missing tests and status differences
+  - ✅ **Plays well with other plugins** — statuses come from pytest's final reports, whatever the plugin order
+  - ✅ **Zero footprint without the flag** — nothing is registered, no hook runs
 
-### 1. Create New Repository
-Click **"Use this template"** on GitHub to create a new repository based on this template.
+---
 
-### 2. Clone and Setup
+## 🛠️ How to Use
 ```bash
-# Clone your new repository
-git clone https://github.com/your-username/your-new-repo.git
-cd your-new-repo
-
-# Create virtual environment
-uv venv
-source .venv/bin/activate   # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-uv sync --group dev # or uv pip install -r requirements.txt
-
-# Copy environment template
-cp env.template .env
-# Edit .env with your specific configuration
+pytest --better-report --md-report --pr-number=123 --commit="$GIT_SHA"
 ```
+Files are written to `results_output/` (or `<output-dir>/results_output/`):
 
-### 3. Customize for Your Project
-1. **Update project metadata**:
-   - Edit `README.md` with your project details
-   - Update `pyproject.toml` with your specific dependencies
-   - Modify `MANIFEST.in` for package distribution
+| File | Content |
+|---|---|
+| `test_results.json` | One entry per test: name, file, class, parameters, markers, status, times, exception, user properties |
+| `execution_results.json` | The run: status, start / end / duration, CI metadata, environment, optionally the pytest command |
+| `test_report.md` | With `--md-report`: a table of all tests and a summary by status |
 
-2. **Configure environment**:
-   - Edit `.env` file with your environment variables
-   - Update VS Code settings in `.vscode/settings.json` if needed
+---
 
-### 4. Setup Pre-commit Hooks
+## ⚙️ Flags
+| Flag | Description |
+|---|---|
+| `--better-report` | Enable the report |
+| `--output-dir=DIR` | Write the files to `DIR/results_output/` |
+| `--md-report` | Also write `test_report.md` |
+| `--traceback` | Add the crash location and traceback frames to each exception |
+| `--repo-name`, `--pr-number`, `--mr-number`, `--pipeline-number`, `--commit` | CI metadata for `execution_results.json` |
+| `--add-parameters` | Add each test parameter as its own field in `test_results.json` |
+| `--pytest-command` | Record the pytest command line in `execution_results.json` |
+| `--pytest-xfail-strict` | Treat an unexpected pass (XPASS) as a failure of the run |
+| `--result-each-test` | Log each test's result after it runs |
+| `--log-collected-tests` | Log every collected test at the start (works without `--better-report` too) |
+
+---
+
+## 📊 Statuses
+Each test gets one status in `test_results.json`.
+The run as a whole gets `execution_info.execution_status` in `execution_results.json`: `failed` if **at least one**
+test has a status marked "Yes" in the last column, otherwise `passed`.
+
+This is the report's own verdict on the run, written into the file. It is separate from pytest's exit code, which this
+plugin doesn't change.
+
+| Test status | Meaning | Makes `execution_status` = `failed` |
+|---|---|---|
+| `passed` | Passed | No |
+| `failed` | Failed or errored in setup, call or teardown | Yes |
+| `skipped` | Skipped (marker, fixture, or a plugin that converted the outcome) | No |
+| `xfailed` | Expected failure | No |
+| `xpassed` | Unexpected pass | Only with `--pytest-xfail-strict` |
+| `collected` | Collected but not run (e.g. the run stopped early) | No |
+
+---
+
+## ▶️ Usage Examples
+### Record structured failure data
+```python
+import json
+
+def test_api():
+    response = call_api()
+    if response.status != 200:
+        raise AssertionError(json.dumps({"status": response.status, "body": response.text}))
+```
+The exception is recorded as `{"status": ..., "body": ...}` instead of plain text.
+
+### Compare two runs
 ```bash
-# Install pre-commit hooks
-pre-commit install
+better_report_compare -a main/test_results.json -b branch/test_results.json --fail-on-diff
 ```
+Lists tests missing from either side and tests whose status changed; exits non-zero with `--fail-on-diff` when
+there are differences. `--test-file-name` limits the comparison to one test file.
 
-```bash
-# Run on all files (optional, for existing codebase)
-pre-commit run --all-files
-```
+---
 
-```bash
-# Run on all files excluding specific files (example: main.py) (optional, for existing codebase)
-pre-commit run --files $(git ls-files | grep -v "main.py")
-```
-
-**Automatic Usage:**
-Once installed, pre-commit will automatically run on every `git commit`. If any hook fails:
-- **Fix the issues** and commit again
-- **Skip hooks** (not recommended): `git commit --no-verify`
-
-### 5. Go-Task
-This template uses **Go-Task** to provide a consistent interface for common development commands.
-
-```bash
-# List available tasks
-task --list
-```
-
-Use `task <task-name>` to run predefined workflows such as linting, formatting, testing, or other project utilities.
-
-All tasks are defined in `Taskfile.yml` at the repository root and are intended to standardize local development and CI usage.
+## 🔁 Migrating from pytest-plugins
+This plugin was previously `better_report` in `pytest-plugins`. Flags, file names and the JSON schema are unchanged.
+Both register the same options, so don't install them together until you're on a `pytest-plugins` release without it.
+Differences you may notice:
+- A test that errors in teardown is now `failed` (it was reported as passed).
+- The `failed-skipped` status no longer exists; converted failures are `skipped`, with the reason in `test_user_properties`.
+- The logger is named `pytest_better_report`.
 
 ---
 
@@ -130,15 +123,8 @@ Additions that promote clean, productive, and maintainable development are alway
 
 ---
 
-## 📋 Development Checklist
-When using this template for a new project:
-
-- [ ] Update README.md with project-specific information
-- [ ] Configure environment variables in .env
-- [ ] Update pyproject.toml with project dependencies
-- [ ] Set up GitHub repository secrets for CI/CD
-- [ ] Configure package metadata in setup.py or pyproject.toml
-- [ ] Add project-specific tests
+## 📄 License
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
