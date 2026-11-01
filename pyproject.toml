@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-better-report"
-version = "1.0.2"
+version = "1.0.3"
 description = "A pytest plugin that writes structured JSON (and optional Markdown) reports of every run, with CI metadata and a CLI to compare two runs."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -31,18 +31,15 @@ classifiers = [
 ]
 
 dependencies = [
-    "custom-python-logger>=4.1.0",
+    "custom-python-logger>=4.2.0",
     "pytest>=9.2.0",
-    "python-base-command>=0.1.8",
-    "python-base-toolkit>=1.1.2",
+    "python-base-command>=1.0.0",
+    "python-base-toolkit>=1.2.1",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.7.0",
-    "python-base-command>=0.1.8",
-    "setuptools>=84.0.0",
-    "wheel>=0.45.1",
 ]
 
 [project.urls]
