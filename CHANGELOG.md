@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-11-08
+
+### Added
+- `execution_results` and `test_results` can be imported while a run is in progress:
+  `from pytest_better_report import execution_results, test_results`. Same names and contents as
+  `pytest_plugins.better_report` had, so code that used them only needs its import changed.
+  `test_results` maps each test's full name to its `TestData`; `execution_results` holds `execution_info`,
+  `environment_info` and (with `--pytest-command`) `pytest_command`. The reporter's `test_results` and
+  `execution_results` attributes are these same dicts.
+- Each run starts with empty results, so the 1.0.0 fix for results leaking between runs still holds. A run nested
+  in the same process (e.g. `pytester.runpytest_inprocess`) gets its own results, and the outer run's results come
+  back when it ends.
+
+### Fixed
+- The plugin tests looked for output in `results_output/` after it moved to `logs/results_output/` in 1.0.2. They now
+  use `OUTPUT_DIR_NAME`.
+
+---
+
+## [1.0.2] - 2026-11-01
+
+### Changed
+- Output is written to `logs/results_output/` (was `results_output/`), or `<--output-dir>/logs/results_output/`.
+
+---
+
 ## [1.0.0] - 2026-11-01
 
 First standalone release. Extracted from the `better_report` plugin and the `better_report_compare` CLI of
