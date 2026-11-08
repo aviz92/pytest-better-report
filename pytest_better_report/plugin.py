@@ -33,6 +33,7 @@ from pytest_better_report.const import (
 )
 from pytest_better_report.models import ExecutionData, ExecutionStatus, TestData
 from pytest_better_report.models.environment_data import EnvironmentData
+from pytest_better_report.results import end_run, execution_results, start_run, test_results
 from pytest_better_report.utils.create_report import generate_md_report
 from pytest_better_report.utils.helper import save_as_json, save_as_markdown
 from pytest_better_report.utils.pytest_helper import (
@@ -156,8 +157,10 @@ class BetterReporter:
 
     def __init__(self, config: pytest.Config) -> None:
         self._config = config
-        self.execution_results: dict[str, Any] = {}
-        self.test_results: dict[str, TestData] = {}
+        # The module-level dicts themselves, so `from pytest_better_report import test_results` sees this run.
+        start_run()
+        self.execution_results: dict[str, Any] = execution_results
+        self.test_results: dict[str, TestData] = test_results
         self._full_names: dict[str, str] = {}  # nodeid -> key in test_results
         self._setup_stop: dict[str, float] = {}
         self._tests_started = False
@@ -283,6 +286,9 @@ class BetterReporter:
         if session.config.getoption("--md-report"):
             res_md = generate_md_report(report=json.loads(json.dumps(self.test_results, default=default_serialize)))
             save_as_markdown(path=output_dir / MD_REPORT_FILENAME, data=res_md)
+
+    def pytest_unconfigure(self) -> None:
+        end_run()  # gives an enclosing in-process run its results back
 
     def _finalize_execution_info(self, config: pytest.Config) -> None:
         exec_info: ExecutionData = self.execution_results["execution_info"]

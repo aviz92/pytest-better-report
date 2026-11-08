@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pytest_better_report.const import EXECUTION_RESULTS_FILENAME, TEST_RESULTS_FILENAME
+from pytest_better_report.const import EXECUTION_RESULTS_FILENAME, OUTPUT_DIR_NAME, TEST_RESULTS_FILENAME
 
 
 class TestBetterReport:
@@ -16,7 +16,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        output_dir = pytester.path / "results_output"
+        output_dir = pytester.path / OUTPUT_DIR_NAME
         assert (
             output_dir / EXECUTION_RESULTS_FILENAME
         ).exists(), f"Expected {EXECUTION_RESULTS_FILENAME} to be created"
@@ -31,7 +31,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess()
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        output_dir = pytester.path / "results_output"
+        output_dir = pytester.path / OUTPUT_DIR_NAME
         assert not output_dir.exists(), "Expected no output dir when plugin disabled"
 
     def test_execution_status_passed_on_passing_tests(self, pytester: pytest.Pytester) -> None:
@@ -43,7 +43,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        execution_file = pytester.path / "results_output" / EXECUTION_RESULTS_FILENAME
+        execution_file = pytester.path / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME
         data = json.loads(execution_file.read_text())
         assert (
             data["execution_info"]["execution_status"] == "passed"
@@ -58,7 +58,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.TESTS_FAILED, f"Expected TESTS_FAILED, got {result.ret}"
-        execution_file = pytester.path / "results_output" / EXECUTION_RESULTS_FILENAME
+        execution_file = pytester.path / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME
         data = json.loads(execution_file.read_text())
         assert (
             data["execution_info"]["execution_status"] == "failed"
@@ -73,7 +73,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        test_file = pytester.path / "results_output" / TEST_RESULTS_FILENAME
+        test_file = pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME
         data = json.loads(test_file.read_text())
         assert len(data) == 1, f"Expected 1 test entry, got {len(data)}"
         test_entry = next(iter(data.values()))
@@ -88,7 +88,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report", "--output-dir=custom_dir")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        output_dir = pytester.path / "custom_dir" / "results_output"
+        output_dir = pytester.path / "custom_dir" / OUTPUT_DIR_NAME
         assert (
             output_dir / EXECUTION_RESULTS_FILENAME
         ).exists(), f"Expected {EXECUTION_RESULTS_FILENAME} in custom output dir"
@@ -102,7 +102,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report", "--md-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        output_dir = pytester.path / "results_output"
+        output_dir = pytester.path / OUTPUT_DIR_NAME
         assert (output_dir / "test_report.md").exists(), "Expected test_report.md to be created"
 
     def test_repo_name_stored_in_execution_results(self, pytester: pytest.Pytester) -> None:
@@ -114,7 +114,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report", "--repo-name=my-repo")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        execution_file = pytester.path / "results_output" / EXECUTION_RESULTS_FILENAME
+        execution_file = pytester.path / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME
         data = json.loads(execution_file.read_text())
         assert (
             data["execution_info"]["repo_name"] == "my-repo"
@@ -129,7 +129,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report", "--pr-number=42")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        execution_file = pytester.path / "results_output" / EXECUTION_RESULTS_FILENAME
+        execution_file = pytester.path / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME
         data = json.loads(execution_file.read_text())
         assert (
             data["execution_info"]["pull_request_number"] == "42"
@@ -150,7 +150,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        test_file = pytester.path / "results_output" / TEST_RESULTS_FILENAME
+        test_file = pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME
         data = json.loads(test_file.read_text())
         assert len(data) == 3, f"Expected 3 test entries, got {len(data)}"
 
@@ -169,7 +169,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        execution_file = pytester.path / "results_output" / EXECUTION_RESULTS_FILENAME
+        execution_file = pytester.path / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME
         data = json.loads(execution_file.read_text())
         assert (
             data["execution_info"]["execution_status"] == "passed"
@@ -190,7 +190,7 @@ class TestBetterReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        test_file = pytester.path / "results_output" / TEST_RESULTS_FILENAME
+        test_file = pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME
         data = json.loads(test_file.read_text())
         test_entry = next(iter(data.values()))
         assert test_entry["test_status"] == "skipped", f"Expected 'skipped', got {test_entry['test_status']}"
@@ -225,7 +225,7 @@ class TestStatusFromFinalReport:
         pytester.makepyfile("def test_converted():\n    assert False\n")
         result = pytester.runpytest_subprocess("--better-report")
         result.assert_outcomes(skipped=1)
-        data = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)
+        data = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)
         assert data["test_converted"]["test_status"] == "skipped", data["test_converted"]["test_status"]
 
     def test_teardown_error_marks_test_failed(self, pytester: pytest.Pytester) -> None:
@@ -245,10 +245,10 @@ class TestStatusFromFinalReport:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.TESTS_FAILED, f"Expected TESTS_FAILED, got {result.ret}"
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_with_broken_cleanup"]
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)["test_with_broken_cleanup"]
         assert test_entry["test_status"] == "failed", test_entry["test_status"]
         assert test_entry["exception_message"]["message"] == "cleanup failed", test_entry["exception_message"]
-        execution = _read_json(pytester.path / "results_output" / EXECUTION_RESULTS_FILENAME)
+        execution = _read_json(pytester.path / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME)
         assert execution["execution_info"]["execution_status"] == "failed"
 
     def test_call_failure_message_kept_when_teardown_also_fails(self, pytester: pytest.Pytester) -> None:
@@ -266,7 +266,7 @@ class TestStatusFromFinalReport:
         """
         )
         pytester.runpytest_subprocess("--better-report")
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_double_failure"]
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)["test_double_failure"]
         assert test_entry["exception_message"]["message"] == "the real failure", test_entry["exception_message"]
 
 
@@ -282,10 +282,10 @@ class TestExceptionMessage:
         )
         result = pytester.runpytest_subprocess("--better-report", "--md-report")
         assert result.ret == pytest.ExitCode.TESTS_FAILED, f"Expected TESTS_FAILED, got {result.ret}"
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_structured"]
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)["test_structured"]
         assert test_entry["exception_message"] == {"code": 500, "reason": "server error"}
         # Regression: the Markdown report crashed with KeyError on a message without a "message" key.
-        assert (pytester.path / "results_output" / "test_report.md").exists()
+        assert (pytester.path / OUTPUT_DIR_NAME / "test_report.md").exists()
 
     def test_json_scalar_message_is_kept_as_text(self, pytester: pytest.Pytester) -> None:
         # Regression: a message that happened to parse as JSON but not as an object (e.g. "404") replaced the
@@ -293,7 +293,7 @@ class TestExceptionMessage:
         pytester.makepyfile("def test_status_code():\n    raise ValueError('404')\n")
         result = pytester.runpytest_subprocess("--better-report", "--md-report", "--traceback")
         assert result.ret == pytest.ExitCode.TESTS_FAILED, f"Expected TESTS_FAILED, got {result.ret}"
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_status_code"]
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)["test_status_code"]
         assert test_entry["exception_message"]["exception_type"] == "ValueError"
         assert test_entry["exception_message"]["message"] == "404"
         assert "traceback" in test_entry["exception_message"]
@@ -308,14 +308,14 @@ class TestRecordedData:
         """
         )
         pytester.runpytest_subprocess("--better-report")
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_with_property"]
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)["test_with_property"]
         assert test_entry["test_user_properties"] == {"device": "camera-7"}, test_entry["test_user_properties"]
 
     def test_results_recorded_without_terminal_plugin(self, pytester: pytest.Pytester) -> None:
         # Regression: tests were registered in a terminal-reporter hook, so -p no:terminal produced an empty report.
         pytester.makepyfile("def test_quiet():\n    assert True\n")
         pytester.runpytest_subprocess("--better-report", "-p", "no:terminal")
-        data = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)
+        data = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)
         assert data["test_quiet"]["test_status"] == "passed", data
 
     def test_result_each_test_is_logged(self, pytester: pytest.Pytester) -> None:
@@ -348,9 +348,9 @@ class TestIsolation:
         )
         pytester.runpytest_inprocess("test_first.py", "--better-report", "--output-dir=first")
         pytester.runpytest_inprocess("test_second.py", "--better-report", "--output-dir=second")
-        second_results = _read_json(pytester.path / "second" / "results_output" / TEST_RESULTS_FILENAME)
+        second_results = _read_json(pytester.path / "second" / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)
         assert list(second_results) == ["test_passes"], list(second_results)
-        execution = _read_json(pytester.path / "second" / "results_output" / EXECUTION_RESULTS_FILENAME)
+        execution = _read_json(pytester.path / "second" / OUTPUT_DIR_NAME / EXECUTION_RESULTS_FILENAME)
         assert execution["execution_info"]["execution_status"] == "passed"
 
 
@@ -368,7 +368,7 @@ class TestRecordedFields:
         )
         result = pytester.runpytest_subprocess("--better-report")
         assert result.ret == pytest.ExitCode.OK, f"Expected OK, got {result.ret}"
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)[
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)[
             "test_drive[{'test_name': 'not-a-report-field', 'speed': 10}]"
         ]
         assert test_entry["test_parameters"] == {"test_name": "not-a-report-field", "speed": 10}, test_entry
@@ -406,5 +406,64 @@ class TestRecordedFields:
         """
         )
         pytester.runpytest_subprocess("--better-report")
-        test_entry = _read_json(pytester.path / "results_output" / TEST_RESULTS_FILENAME)["test_marked[{'n': 1}]"]
+        test_entry = _read_json(pytester.path / OUTPUT_DIR_NAME / TEST_RESULTS_FILENAME)["test_marked[{'n': 1}]"]
         assert sorted(test_entry["test_markers"]) == ["device_type", "jira", "slow"], test_entry["test_markers"]
+
+
+class TestPublicResults:
+    def test_results_importable_during_run(self, pytester: pytest.Pytester) -> None:
+        pytester.makepyfile(
+            """
+            from pytest_better_report import execution_results, test_results
+
+            def test_sees_itself():
+                assert test_results["test_sees_itself"].test_status == "collected"
+                assert execution_results["execution_info"].execution_status == "started"
+        """
+        )
+        result = pytester.runpytest_subprocess("--better-report")
+        assert result.ret == pytest.ExitCode.OK, result.stdout.str()
+
+    def test_reporter_exposes_same_dicts(self, pytester: pytest.Pytester) -> None:
+        pytester.makeconftest(
+            """
+            import pytest_better_report
+
+            def pytest_sessionstart(session):
+                reporter = session.config.pluginmanager.get_plugin("better-report-reporter")
+                assert reporter.test_results is pytest_better_report.test_results
+                assert reporter.execution_results is pytest_better_report.execution_results
+        """
+        )
+        pytester.makepyfile("def test_ok():\n    assert True\n")
+        result = pytester.runpytest_subprocess("--better-report")
+        assert result.ret == pytest.ExitCode.OK, result.stdout.str()
+
+    def test_results_empty_without_flag(self, pytester: pytest.Pytester) -> None:
+        pytester.makepyfile(
+            """
+            from pytest_better_report import execution_results, test_results
+
+            def test_empty():
+                assert not test_results and not execution_results
+        """
+        )
+        result = pytester.runpytest_subprocess()
+        assert result.ret == pytest.ExitCode.OK, result.stdout.str()
+
+    def test_nested_in_process_run_keeps_outer_results(self, pytester: pytest.Pytester) -> None:
+        pytester.makeconftest('pytest_plugins = ["pytester"]\n')
+        pytester.makepyfile(
+            test_outer="""
+            from pytest_better_report import execution_results, test_results
+
+            def test_outer(pytester):
+                outer_revision = execution_results["execution_info"].revision
+                pytester.makepyfile(test_inner="def test_inner():\\n    assert True\\n")
+                pytester.runpytest_inprocess("--better-report")
+                assert list(test_results) == ["test_outer"], list(test_results)
+                assert execution_results["execution_info"].revision == outer_revision
+        """
+        )
+        result = pytester.runpytest_subprocess("--better-report", "test_outer.py")
+        assert result.ret == pytest.ExitCode.OK, result.stdout.str()

@@ -109,6 +109,28 @@ Differences you may notice:
 - The logger is named `pytest_better_report`.
 - `--add-parameters` was removed. Parameters are always recorded in `test_parameters`; in ELK / Kibana query them
   as `test_parameters.<name>` instead of `<name>`. Passing the flag now fails with "unrecognized arguments".
+- The live results moved: `from pytest_plugins.better_report import execution_results, test_results` becomes
+  `from pytest_better_report import execution_results, test_results` (same dicts, same contents).
+
+---
+
+## 🧩 Reading results during a run
+The results are importable from your own `conftest.py`, fixtures or plugins while the run is in progress:
+
+```python
+import pytest
+from pytest_better_report import execution_results, test_results
+
+@pytest.hookimpl(trylast=True)  # after the reporter has set the final status / end time / duration
+def pytest_sessionfinish(session):
+    info = execution_results["execution_info"]  # ExecutionData
+    failed = [name for name, t in test_results.items() if t.test_status == "failed"]
+```
+
+`test_results` maps each test's full name to its `TestData`; `execution_results` holds `execution_info`,
+`environment_info` and (with `--pytest-command`) `pytest_command`. Both are emptied when a new run starts and stay
+empty without `--better-report`. A run nested in the same process (e.g. `pytester.runpytest_inprocess`) gets its own
+results, and the outer run's results come back when it ends.
 
 ---
 
